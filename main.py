@@ -150,17 +150,20 @@ async def scrape_and_analyse(state: BrandMonitoringState) -> dict:
                 "custom_output_fields": "markdown",
             },
         )
-
         filtered = [
-            {
-                "url": r["url"],
-                "markdown": r["markdown"],
-            }
-            for r in raw
+            (
+                {
+                    "url": urls[index],
+                    "markdown": r["markdown"],
+                }
+                if "markdown" in r.keys()
+                else None
+            )
+            for index, r in enumerate(raw)
         ]
-
-        updates["x_filtered"] = filtered
-        updates["x_report"] = run_x_crew(filtered, state["brand_name"])
+        print(filtered)
+        updates["web_filtered"] = filtered
+        updates["web_report"] = run_web_crew(filtered, state["brand_name"])
 
     await asyncio.gather(linkedin(), instagram(), youtube(), x(), web())
     return updates
@@ -175,15 +178,15 @@ def build_graph():
 
     graph.set_entry_point("search_and_route")
     graph.add_edge("search_and_route", "scrape_and_analyse")
-    graph.add_edge("scrape_and_analyse")
+    graph.add_edge("scrape_and_analyse", END)
 
     return graph.compile()
 
 
 # Entry point
-def run(brand_name: str, total_results: int = 15) -> BrandMonitoringState:
+async def run(brand_name: str, total_results: int = 15) -> BrandMonitoringState:
     app = build_graph()
-    final_state = app.invoke(
+    final_state = await app.ainvoke(
         {
             "brand_name": brand_name,
             "total_results": total_results,
@@ -210,4 +213,4 @@ def run(brand_name: str, total_results: int = 15) -> BrandMonitoringState:
 
 
 if __name__ == "__main__":
-    result = run("Hugging Face", total_results=15)
+    result = asyncio.run(run("Hugging Face", total_results=15))

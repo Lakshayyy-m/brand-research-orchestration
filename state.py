@@ -54,10 +54,10 @@ class XReport(BaseModel):
 
 
 class WebWriterReport(BaseModel):
-    post_title: str = Field(
+    page_title: str = Field(
         description="Title explaining how the brand was mentioned on the page"
     )
-    post_link: str = Field(description="Link to the scraped page")
+    page_link: str = Field(description="Link to the scraped page")
     content_lines: list[str] = Field(description="Bullet points relevant to the brand")
 
 

@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 import gc
+import asyncio
 
 from main import run
 
@@ -31,12 +32,14 @@ def start_analysis():
     status = st.empty()
     status.info(f"Scraping and analysis '{st.session_state.brand_name}'...")
 
-    st.session_state.response = run(
-        brand_name=st.session_state.brand_name,
-        total_results=st.session_state.total_results,
+    st.session_state.response = asyncio.run(
+         run(
+            brand_name=st.session_state.brand_name,
+            total_results=st.session_state.total_results,
+        )
     )
 
-    status.sucess("Analysis complete!")
+    status.success("Analysis complete!")
     status.empty()
 
 
@@ -45,7 +48,7 @@ def start_analysis():
 with st.sidebar:
     st.header("Brand Monitoring Settings")
 
-    st.session_state.brandh_name = st.text_input(
+    st.session_state.brand_name = st.text_input(
         "Company/Brand Name",
         value=(
             "Hugging Face"
@@ -66,13 +69,16 @@ with st.sidebar:
         st.button("Start Analysis", type="primary", on_click=start_analysis)
     with col2:
         st.button("Reset", on_click=reset_analysis)
-    
+
 
 # Header
 
-st.markdown("""
-    # Brand Monitoring powered by <img src="data:image/png;base64,{}" width="180" style="vertical-align: -7px;>" & <img src="data:image/png;base64,{}" width="180" style="vertical-align: -10px;">
-""".format(st.session_state.deep_seek_image, st.session_state.databright_image))
+st.markdown(
+    """
+    # Brand Monitoring powered by <img src="data:image/png;base64,{}" width="180" style="vertical-align: -7px;"> & <img src="data:image/png;base64,{}" width="180" style="vertical-align: -10px;">
+""".format(st.session_state.deep_seek_image, st.session_state.brightdata_image),
+    unsafe_allow_html=True,
+)
 
 
 # Results
@@ -80,7 +86,7 @@ st.markdown("""
 if st.session_state.response:
     try:
         r = st.session_state.response
-        
+
         if r.get("linkedin_report"):
             st.markdown("## LinkedIn Mentions")
             for post in r["linkedin_report"].content:
@@ -88,7 +94,7 @@ if st.session_state.response:
                     st.markdown(f"**Source:** [{post.post_link}]({post.post_link})")
                     for line in post.content_lines:
                         st.markdown(f"- {line}")
-        
+
         if r.get("instagram_report"):
             st.markdown("## Instagram Mentions")
             for post in r["instagram_report"].content:
@@ -104,7 +110,7 @@ if st.session_state.response:
                     st.markdown(f"**Source:** [{video.video_link}]({video.video_link})")
                     for line in video.content_lines:
                         st.markdown(f"- {line}")
-        
+
         if r.get("x_report"):
             st.markdown("## X Mentions")
             for post in r["x_report"].content:
@@ -112,13 +118,13 @@ if st.session_state.response:
                     st.markdown(f"**Source:** [{post.post_link}]({post.post_link})")
                     for line in post.content_lines:
                         st.markdown(f"- {line}")
-        
+
         if r.get("web_report"):
             st.markdown("## Web Mentions")
-            for post in r["web_report"].content:
-                with st.expander(f"{post.post_title}"):
-                    st.markdown(f"**Source:** [{post.post_link}]({post.post_link})")
-                    for line in post.content_lines:
+            for page in r["web_report"].content:
+                with st.expander(f"{page.page_title}"):
+                    st.markdown(f"**Source:** [{page.page_link}]({page.page_link})")
+                    for line in page.content_lines:
                         st.markdown(f"- {line}")
 
     except Exception as e:
@@ -126,7 +132,3 @@ if st.session_state.response:
 
 st.markdown("---")
 st.markdown("Built with LangGraph, Bright Data and Streamlit")
-
-
-
-
