@@ -18,8 +18,8 @@ load_dotenv()
 def search_and_route(state: BrandMonitoringState) -> dict:
     print(f"Searching for '{state['brand_name']}...")
 
-    results = search_brand(state["brand_name"], state["total_results"])
-    buckets = route_results(results)
+    buckets = search_brand(state["brand_name"], state["total_results"])
+    # buckets = route_results(results)
 
     print(
         f" LinkedIn: {len(buckets['linkedin'])} | "
@@ -61,7 +61,11 @@ async def scrape_and_analyse(state: BrandMonitoringState) -> dict:
             for r in raw
         ]
         updates["linkedin_filtered"] = filtered
-        updates["linkedin_report"] = run_linkedin_crew(filtered, state["brand_name"])
+        updates["linkedin_report"] = (
+            run_linkedin_crew(filtered, state["brand_name"])
+            if len(filtered) > 0
+            else None
+        )
 
     async def instagram():
         if not state["instagram_search_response"]:
@@ -84,7 +88,11 @@ async def scrape_and_analyse(state: BrandMonitoringState) -> dict:
             for r in raw
         ]
         updates["instagram_filtered"] = filtered
-        updates["instagram_report"] = run_instagram_crew(filtered, state["brand_name"])
+        updates["instagram_report"] = (
+            run_instagram_crew(filtered, state["brand_name"])
+            if len(filtered) > 0
+            else None
+        )
 
     async def youtube():
         if not state["youtube_search_response"]:
@@ -93,6 +101,7 @@ async def scrape_and_analyse(state: BrandMonitoringState) -> dict:
         raw = scrape_urls(
             urls, {"dataset_id": "gd_lk56epmy2i5g7lzu0k", "include_errors": "true"}
         )
+        print(raw)
         filtered = [
             {
                 "url": r["url"],
@@ -109,7 +118,11 @@ async def scrape_and_analyse(state: BrandMonitoringState) -> dict:
         ]
 
         updates["youtube_filtered"] = filtered
-        updates["youtube_report"] = run_youtube_crew(filtered, state["brand_name"])
+        updates["youtube_report"] = (
+            run_youtube_crew(filtered, state["brand_name"])
+            if len(filtered) > 0
+            else None
+        )
 
     async def x():
         if not state["x_search_response"]:
@@ -125,18 +138,20 @@ async def scrape_and_analyse(state: BrandMonitoringState) -> dict:
                 "likes": r["likes"],
                 "replies": r["replies"],
                 "reposts": r["reposts"],
-                "original_poster": r["youtuber"],
                 "quotes": r["quotes"],
                 "bookmarks": r["bookmarks"],
                 "hashtags": r["hashtags"],
                 "description": r["description"],
                 "tagged_users": r["tagged_users"],
+                "original_poster": r["user_posted"],
             }
             for r in raw
         ]
 
         updates["x_filtered"] = filtered
-        updates["x_report"] = run_x_crew(filtered, state["brand_name"])
+        updates["x_report"] = (
+            run_x_crew(filtered, state["brand_name"]) if len(filtered) > 0 else None
+        )
 
     async def web():
         if not state["web_search_response"]:
@@ -161,11 +176,13 @@ async def scrape_and_analyse(state: BrandMonitoringState) -> dict:
             )
             for index, r in enumerate(raw)
         ]
-        print(filtered)
         updates["web_filtered"] = filtered
-        updates["web_report"] = run_web_crew(filtered, state["brand_name"])
+        updates["web_report"] = (
+            run_web_crew(filtered, state["brand_name"]) if len(filtered) > 0 else None
+        )
 
-    await asyncio.gather(linkedin(), instagram(), youtube(), x(), web())
+    # await youtube()
+    await asyncio.gather(linkedin(), instagram(), x(), web())
     return updates
 
 
@@ -184,7 +201,7 @@ def build_graph():
 
 
 # Entry point
-async def run(brand_name: str, total_results: int = 15) -> BrandMonitoringState:
+async def run(brand_name: str, total_results: int = 1) -> BrandMonitoringState:
     app = build_graph()
     final_state = await app.ainvoke(
         {
