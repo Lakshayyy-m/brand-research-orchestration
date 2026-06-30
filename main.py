@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
 
 from state import BrandMonitoringState
-from tools.bright_data import search_brand, scrape_urls, route_results
+from tools.bright_data import search_brand, scrape_urls
 from crews.linkedin_crew import run_linkedin_crew
 from crews.instagram_crew import run_instagram_crew
 from crews.youtube_crew import run_youtube_crew
@@ -50,13 +50,13 @@ async def scrape_and_analyse(state: BrandMonitoringState) -> dict:
         raw = scrape_urls(urls, {"dataset_id": "gd_lyy3tktm25m4avu764"})
         filtered = [
             {
-                "url": r["url"],
-                "headline": r["headline"],
-                "post_text": r["post_text"],
-                "hashtags": r["hashtags"],
-                "tagged_companies": r["tagged_companies"],
-                "tagged_people": r["tagged_people"],
-                "original_poster": r["user_id"],
+                "url": r.get("url"),
+                "headline": r.get("headline"),
+                "post_text": r.get("post_text"),
+                "hashtags": r.get("hashtags", []),
+                "tagged_companies": r.get("tagged_companies", []),
+                "tagged_people": r.get("tagged_people", []),
+                "original_poster": r.get("user_id"),
             }
             for r in raw
         ]
@@ -77,13 +77,13 @@ async def scrape_and_analyse(state: BrandMonitoringState) -> dict:
         )
         filtered = [
             {
-                "url": r["url"],
-                "description": r["description"],
-                "likes": r["likes"],
-                "num_comments": r["num_comments"],
-                "is_paid_partnership": r["is_paid_partnership"],
-                "followers": r["followers"],
-                "original_poster": r["user_id"],
+                "url": r.get("url"),
+                "description": r.get("description"),
+                "likes": r.get("likes"),
+                "num_comments": r.get("num_comments"),
+                "is_paid_partnership": r.get("is_paid_partnership"),
+                "followers": r.get("followers"),
+                "original_poster": r.get("user_posted"),
             }
             for r in raw
         ]
@@ -104,15 +104,15 @@ async def scrape_and_analyse(state: BrandMonitoringState) -> dict:
         print(raw)
         filtered = [
             {
-                "url": r["url"],
-                "title": r["title"],
-                "description": r["description"],
-                "original_poster": r["youtuber"],
-                "verified": r["verified"],
-                "hashtags": r["hashtags"],
-                "views": r["views"],
-                "likes": r["likes"],
-                "transcript": r["transcript"],
+                "url": r.get("url"),
+                "title": r.get("title"),
+                "description": r.get("description"),
+                "original_poster": r.get("youtuber"),
+                "verified": r.get("verified"),
+                "hashtags": r.get("hashtags", []),
+                "views": r.get("views"),
+                "likes": r.get("likes"),
+                "transcript": r.get("transcript"),
             }
             for r in raw
         ]
@@ -133,17 +133,17 @@ async def scrape_and_analyse(state: BrandMonitoringState) -> dict:
         )
         filtered = [
             {
-                "url": r["url"],
-                "views": r["views"],
-                "likes": r["likes"],
-                "replies": r["replies"],
-                "reposts": r["reposts"],
-                "quotes": r["quotes"],
-                "bookmarks": r["bookmarks"],
-                "hashtags": r["hashtags"],
-                "description": r["description"],
-                "tagged_users": r["tagged_users"],
-                "original_poster": r["user_posted"],
+                "url": r.get("url"),
+                "views": r.get("views"),
+                "likes": r.get("likes"),
+                "replies": r.get("replies"),
+                "reposts": r.get("reposts"),
+                "quotes": r.get("quotes"),
+                "bookmarks": r.get("bookmarks"),
+                "hashtags": r.get("hashtags", []),
+                "description": r.get("description"),
+                "tagged_users": r.get("tagged_users", []),
+                "original_poster": r.get("user_posted"),
             }
             for r in raw
         ]
@@ -169,10 +169,10 @@ async def scrape_and_analyse(state: BrandMonitoringState) -> dict:
             (
                 {
                     "url": urls[index],
-                    "markdown": r["markdown"],
+                    "markdown": r.get("markdown"),
                 }
-                if "markdown" in r.keys()
-                else None
+                if "markdown" in r
+                else {"url": urls[index], "markdown": None}
             )
             for index, r in enumerate(raw)
         ]
